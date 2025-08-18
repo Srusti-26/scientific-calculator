@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Scientific Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&family=Roboto+Mono:wght@400;500;600&display=swap');
+        
+        :root {
+            --primary-light: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary-light: #ec4899;
+            --secondary-dark: #db2777;
+            --accent-light: #06b6d4;
+            --accent-dark: #0891b2;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --light-bg: #f8fafc;
+            --dark-bg: #0f172a;
+            --light-surface: #ffffff;
+            --dark-surface: #1e293b;
+            --light-text: #334155;
+            --dark-text: #f8fafc;
+        }
+        
+        body {
+            font-family: 'Roboto Mono', monospace;
+            transition: background 0.5s ease, color 0.5s ease;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+        }
+        
+        body.light-mode {
+            background: linear-gradient(-45deg, #f0f9ff, #e0f2fe, #dbeafe, #ede9fe);
+            color: var(--light-text);
+        }
+        
+        body.dark-mode {
+            background: linear-gradient(-45deg, #0f172a, #1e1b4b, #312e81, #1e40af);
+            color: var(--dark-text);
+        }
+        
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .calculator {
+            border-radius: 24px;
+            overflow: hidden;
+            transition: all 0.5s ease;
+            transform-style: preserve-3d;
+            perspective: 1000px;
+            max-width: 360px;
+            width: 100%;
+        }
+        
+        .light-mode .calculator {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px);
+            box-shadow: 
+                0 20px 25px -5px rgba(0, 0, 0, 0.1),
+                0 10px 10px -5px rgba(0, 0, 0, 0.04),
+                0 0 0 1px rgba(255, 255, 255, 0.1),
+                inset 0 1px 0 0 rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+        
+        .dark-mode .calculator {
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(20px);
+            box-shadow: 
+                0 20px 25px -5px rgba(0, 0, 0, 0.3),
+                0 10px 10px -5px rgba(0, 0, 0, 0.2),
+                0 0 0 1px rgba(255, 255, 255, 0.05),
+                inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .display {
+            font-family: 'Orbitron', sans-serif;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .light-mode .display {
+            background: linear-gradient(160deg, #e0f2fe, #dbeafe);
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+        
+        .dark-mode .display {
+            background: linear-gradient(160deg, #0f172a, #1e293b);
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        
+        .display::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--primary-light), transparent);
+            opacity: 0.5;
+        }
+        
+        .calc-btn {
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            user-select: none;
+            position: relative;
+            overflow: hidden;
+            border-radius: 16px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transform: translateY(0);
+        }
+        
+        .calc-btn:active {
+            transform: translateY(2px);
+            transition: transform 0.1s;
+        }
+        
+        .calc-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at center, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 70%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .calc-btn:hover::before {
+            opacity: 1;
+        }
+        
+        .calc-btn::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 100px;
+            height: 100px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            opacity: 0;
+            transition: transform 0.5s, opacity 0.5s;
+        }
+        
+        .calc-btn:active::after {
+            transform: translate(-50%, -50%) scale(1.5);
+            opacity: 0.3;
+            transition: 0s;
+        }
+        
+        /* Button types */
+        .light-mode .number {
+            background: white;
+            color: var(--light-text);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+        }
+        
+        .dark-mode .number {
+            background: #334155;
+            color: var(--dark-text);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        }
+        
+        .light-mode .operation {
+            background: linear-gradient(135deg, #ddd6fe, #c4b5fd);
+            color: #5b21b6;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+        }
+        
+        .dark-mode .operation {
+            background: linear-gradient(135deg, #4c1d95, #5b21b6);
+            color: #ddd6fe;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        }
+        
+        .light-mode .function {
+            background: linear-gradient(135deg, #bfdbfe, #93c5fd);
+            color: #1e40af;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+        }
+        
+        .dark-mode .function {
+            background: linear-gradient(135deg, #1e3a8a, #1e40af);
+            color: #bfdbfe;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        }
+        
+        .light-mode .equals {
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            color: white;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+        
+        .dark-mode .equals {
+            background: linear-gradient(135deg, #4f46e5, #4338ca);
+            color: white;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+        
+        .light-mode .clear {
+            background: linear-gradient(135deg, #fecaca, #f87171);
+            color: #b91c1c;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+        }
+        
+        .dark-mode .clear {
+            background: linear-gradient(135deg, #b91c1c, #991b1b);
+            color: #fecaca;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        }
+        
+        .light-mode .backspace {
+            background: linear-gradient(135deg, #fed7aa, #fb923c);
+            color: #9a3412;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+        }
+        
+        .dark-mode .backspace {
+            background: linear-gradient(135deg, #9a3412, #c2410c);
+            color: #fed7aa;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        }
+        
+        .history-panel {
+            max-height: 120px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            transition: all 0.3s ease;
+        }
+        
+        .light-mode .history-panel {
+            background: rgba(240, 249, 255, 0.7);
+            scrollbar-color: #cbd5e1 transparent;
+        }
+        
+        .dark-mode .history-panel {
+            background: rgba(15, 23, 42, 0.7);
+            scrollbar-color: #475569 transparent;
+        }
+        
+        .history-panel::-webkit-scrollbar {
+            width: 4px;
+        }
+        
+        .light-mode .history-panel::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 20px;
+        }
+        
+        .dark-mode .history-panel::-webkit-scrollbar-thumb {
+            background-color: #475569;
+            border-radius: 20px;
+        }
+        
+        .history-panel::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        .history-item {
+            transition: all 0.2s ease;
+            cursor: pointer;
+            border-radius: 8px;
+            padding: 4px 8px;
+        }
+        
+        .light-mode .history-item:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+        
+        .dark-mode .history-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        /* Toggle switch */
+        .theme-toggle {
+            width: 60px;
+            height: 30px;
+            background-color: #e2e8f0;
+            border-radius: 15px;
+            position: relative;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 5px;
+        }
+        
+        .theme-toggle .sun {
+            color: #f59e0b;
+            font-size: 14px;
+            z-index: 1;
+        }
+        
+        .theme-toggle .moon {
+            color: #6366f1;
+            font-size: 14px;
+            z-index: 1;
+        }
+        
+        .theme-toggle::after {
+            content: '';
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background-color: white;
+            top: 3px;
+            left: 3px;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .dark-mode .theme-toggle {
+            background-color: #334155;
+        }
+        
+        .dark-mode .theme-toggle::after {
+            transform: translateX(30px);
+            background-color: #1e293b;
+        }
+        
+        /* Animations */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(20px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        .result-animation {
+            animation: pulse 0.3s ease-in-out;
+        }
+        
+        .history-animation {
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        .typing-animation {
+            animation: slideIn 0.2s ease-out;
+        }
+        
+        /* Glow effects */
+        .equals:focus {
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.5);
+            outline: none;
+        }
+        
+        .calculator-container {
+            position: relative;
+            padding: 20px;
+            border-radius: 30px;
+            transition: all 0.5s ease;
+        }
+        
+        .light-mode .calculator-container {
+            background: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.1);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .dark-mode .calculator-container {
+            background: rgba(15, 23, 42, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        /* Particles */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.5;
+            animation: float 15s infinite linear;
+        }
+        
+        @keyframes float {
+            0% { transform: translateY(0) rotate(0deg); }
+            100% { transform: translateY(-100vh) rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="p-4 light-mode">
+    <!-- Particles background -->
+    <div class="particles" id="particles"></div>
+    
+    <div class="calculator-container">
+        <div class="calculator w-full">
+            <!-- Header with theme toggle -->
+            <div class="flex justify-between items-center p-4 border-b border-opacity-20 border-gray-200 dark:border-gray-700">
+                <h2 class="text-lg font-medium flex items-center">
+                    <span class="mr-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        </svg>
+                    </span>
+                    Scientific Calculator
+                </h2>
+                <div id="themeToggle" class="theme-toggle">
+                    <span class="sun">☀️</span>
+                    <span class="moon">🌙</span>
+                </div>
+            </div>
+            
+            <!-- History panel -->
+            <div class="history-panel p-2 text-right text-xs">
+                <div id="history" class="space-y-1"></div>
+            </div>
+            
+            <!-- Calculator display -->
+            <div class="display p-4">
+                <div id="expression" class="text-right text-sm h-6 overflow-x-auto whitespace-nowrap opacity-70"></div>
+                <div id="result" class="text-right text-3xl font-medium h-12 overflow-x-auto whitespace-nowrap">0</div>
+            </div>
+            
+            <!-- Calculator buttons -->
+            <div class="grid grid-cols-4 gap-3 p-4">
+                <!-- Row 1 -->
+                <button class="calc-btn function h-14" onclick="handleFunction('sin')">sin</button>
+                <button class="calc-btn function h-14" onclick="handleFunction('cos')">cos</button>
+                <button class="calc-btn function h-14" onclick="handleFunction('tan')">tan</button>
+                <button class="calc-btn clear h-14" onclick="clearAll()">AC</button>
+                
+                <!-- Row 2 -->
+                <button class="calc-btn function h-14" onclick="handleFunction('log')">log</button>
+                <button class="calc-btn function h-14" onclick="handleFunction('ln')">ln</button>
+                <button class="calc-btn operation h-14" onclick="appendToExpression('(')">(</button>
+                <button class="calc-btn operation h-14" onclick="appendToExpression(')')">)</button>
+                
+                <!-- Row 3 -->
+                <button class="calc-btn function h-14" onclick="handleFunction('sqrt')">√</button>
+                <button class="calc-btn function h-14" onclick="handleFunction('pow')">x<sup>y</sup></button>
+                <button class="calc-btn operation h-14" onclick="appendToExpression('%')">%</button>
+                <button class="calc-btn backspace h-14" onclick="backspace()">⌫</button>
+                
+                <!-- Row 4 -->
+                <button class="calc-btn number h-14" onclick="appendToExpression('7')">7</button>
+                <button class="calc-btn number h-14" onclick="appendToExpression('8')">8</button>
+                <button class="calc-btn number h-14" onclick="appendToExpression('9')">9</button>
+                <button class="calc-btn operation h-14" onclick="appendToExpression('/')">÷</button>
+                
+                <!-- Row 5 -->
+                <button class="calc-btn number h-14" onclick="appendToExpression('4')">4</button>
+                <button class="calc-btn number h-14" onclick="appendToExpression('5')">5</button>
+                <button class="calc-btn number h-14" onclick="appendToExpression('6')">6</button>
+                <button class="calc-btn operation h-14" onclick="appendToExpression('*')">×</button>
+                
+                <!-- Row 6 -->
+                <button class="calc-btn number h-14" onclick="appendToExpression('1')">1</button>
+                <button class="calc-btn number h-14" onclick="appendToExpression('2')">2</button>
+                <button class="calc-btn number h-14" onclick="appendToExpression('3')">3</button>
+                <button class="calc-btn operation h-14" onclick="appendToExpression('-')">−</button>
+                
+                <!-- Row 7 -->
+                <button class="calc-btn number h-14" onclick="appendToExpression('0')">0</button>
+                <button class="calc-btn number h-14" onclick="appendToExpression('.')">.</button>
+                <button class="calc-btn equals h-14" onclick="calculate()">=</button>
+                <button class="calc-btn operation h-14" onclick="appendToExpression('+')">+</button>
+                
+                <!-- Row 8 -->
+                <button class="calc-btn function h-14" onclick="handleFunction('pi')">π</button>
+                <button class="calc-btn function h-14" onclick="handleFunction('e')">e</button>
+                <button class="calc-btn function h-14" onclick="handleFunction('abs')">|x|</button>
+                <button class="calc-btn function h-14" onclick="handleFunction('fact')">n!</button>
+            </div>
+        </div>
+        
+        <div class="text-center mt-4 text-sm opacity-70">
+            <p>© 2022 <span class="logo">SRUSTI</span>. All Rights Reserved.</p>
+        </div>
+    </div>
+
+    <script>
+        // DOM elements
+        const expressionElement = document.getElementById('expression');
+        const resultElement = document.getElementById('result');
+        const historyElement = document.getElementById('history');
+        const themeToggle = document.getElementById('themeToggle');
+        const body = document.body;
+        const particles = document.getElementById('particles');
+        
+        // Calculator state
+        let currentExpression = '';
+        let calculationHistory = [];
+        let isDarkMode = false;
+        
+        // Create particles
+        function createParticles() {
+            particles.innerHTML = '';
+            const particleCount = 20;
+            const colors = isDarkMode ? 
+                ['#6366f1', '#8b5cf6', '#d946ef', '#ec4899'] : 
+                ['#6366f1', '#3b82f6', '#06b6d4', '#14b8a6'];
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                
+                // Random properties
+                const size = Math.random() * 20 + 5;
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                const left = Math.random() * 100;
+                const delay = Math.random() * 15;
+                const duration = Math.random() * 15 + 10;
+                
+                // Apply styles
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                particle.style.backgroundColor = color;
+                particle.style.left = `${left}%`;
+                particle.style.animationDelay = `${delay}s`;
+                particle.style.animationDuration = `${duration}s`;
+                particle.style.opacity = Math.random() * 0.3 + 0.1;
+                
+                particles.appendChild(particle);
+            }
+        }
+        
+        // Check for saved theme preference
+        if (localStorage.getItem('calculatorDarkMode') === 'true') {
+            toggleDarkMode();
+        }
+        
+        // Create initial particles
+        createParticles();
+        
+        // Theme toggle event listener
+        themeToggle.addEventListener('click', toggleDarkMode);
+        
+        // Function to toggle dark mode
+        function toggleDarkMode() {
+            isDarkMode = !isDarkMode;
+            body.classList.toggle('dark-mode', isDarkMode);
+            body.classList.toggle('light-mode', !isDarkMode);
+            localStorage.setItem('calculatorDarkMode', isDarkMode);
+            
+            // Recreate particles for theme
+            createParticles();
+        }
+        
+        // Function to append characters to the expression with animation
+        function appendToExpression(value) {
+            currentExpression += value;
+            
+            // Add typing animation
+            expressionElement.classList.add('typing-animation');
+            setTimeout(() => {
+                expressionElement.classList.remove('typing-animation');
+            }, 200);
+            
+            updateDisplay();
+        }
+        
+        // Function to handle special functions
+        function handleFunction(func) {
+            switch(func) {
+                case 'sin':
+                    currentExpression += 'sin(';
+                    break;
+                case 'cos':
+                    currentExpression += 'cos(';
+                    break;
+                case 'tan':
+                    currentExpression += 'tan(';
+                    break;
+                case 'log':
+                    currentExpression += 'log10(';
+                    break;
+                case 'ln':
+                    currentExpression += 'log(';
+                    break;
+                case 'sqrt':
+                    currentExpression += 'sqrt(';
+                    break;
+                case 'pow':
+                    currentExpression += '^';
+                    break;
+                case 'pi':
+                    currentExpression += 'π';
+                    break;
+                case 'e':
+                    currentExpression += 'e';
+                    break;
+                case 'abs':
+                    currentExpression += 'abs(';
+                    break;
+                case 'fact':
+                    currentExpression += '!';
+                    break;
+            }
+            
+            // Add typing animation
+            expressionElement.classList.add('typing-animation');
+            setTimeout(() => {
+                expressionElement.classList.remove('typing-animation');
+            }, 200);
+            
+            updateDisplay();
+        }
+        
+        // Function to clear the calculator with animation
+        function clearAll() {
+            // Add clear animation
+            resultElement.classList.add('animate__animated', 'animate__fadeOut');
+            expressionElement.classList.add('animate__animated', 'animate__fadeOut');
+            
+            setTimeout(() => {
+                currentExpression = '';
+                updateDisplay();
+                resultElement.textContent = '0';
+                
+                resultElement.classList.remove('animate__animated', 'animate__fadeOut');
+                expressionElement.classList.remove('animate__animated', 'animate__fadeOut');
+                
+                resultElement.classList.add('animate__animated', 'animate__fadeIn');
+                expressionElement.classList.add('animate__animated', 'animate__fadeIn');
+                
+                setTimeout(() => {
+                    resultElement.classList.remove('animate__animated', 'animate__fadeIn');
+                    expressionElement.classList.remove('animate__animated', 'animate__fadeIn');
+                }, 500);
+            }, 300);
+        }
+        
+        // Function to delete the last character (backspace) with animation
+        function backspace() {
+            if (currentExpression.length > 0) {
+                // Add backspace animation
+                expressionElement.classList.add('animate__animated', 'animate__headShake');
+                
+                setTimeout(() => {
+                    currentExpression = currentExpression.slice(0, -1);
+                    updateDisplay();
+                    
+                    expressionElement.classList.remove('animate__animated', 'animate__headShake');
+                    
+                    // If expression is empty after backspace, reset result to 0
+                    if (currentExpression === '') {
+                        resultElement.textContent = '0';
+                    }
+                }, 300);
+            }
+        }
+        
+        // Function to update the display
+        function updateDisplay() {
+            // Format the expression for display (replace symbols for better readability)
+            let displayExpression = currentExpression
+                .replace(/\*/g, '×')
+                .replace(/\//g, '÷')
+                .replace(/log10\(/g, 'log(')
+                .replace(/log\(/g, 'ln(')
+                .replace(/\^/g, '^');
+                
+            expressionElement.textContent = displayExpression;
+            
+            // Try to evaluate the expression as you type (for immediate feedback)
+            try {
+                if (currentExpression) {
+                    const result = evaluateExpression(currentExpression);
+                    if (!isNaN(result) && isFinite(result)) {
+                        resultElement.textContent = formatResult(result);
+                    }
+                } else {
+                    resultElement.textContent = '0';
+                }
+            } catch (error) {
+                // If there's an error in evaluation, don't update the result
+                // This allows for partial expressions to be entered
+            }
+        }
+        
+        // Function to calculate the result with animation
+        function calculate() {
+            if (!currentExpression) return;
+            
+            try {
+                const result = evaluateExpression(currentExpression);
+                
+                if (isNaN(result) || !isFinite(result)) {
+                    resultElement.textContent = 'Error';
+                    resultElement.classList.add('animate__animated', 'animate__shakeX');
+                    setTimeout(() => {
+                        resultElement.classList.remove('animate__animated', 'animate__shakeX');
+                    }, 500);
+                    return;
+                }
+                
+                // Format the result
+                const formattedResult = formatResult(result);
+                
+                // Add result animation
+                resultElement.classList.add('result-animation');
+                setTimeout(() => {
+                    resultElement.classList.remove('result-animation');
+                }, 300);
+                
+                resultElement.textContent = formattedResult;
+                
+                // Add to history with animation
+                addToHistory(currentExpression, formattedResult);
+                
+                // Update the expression to the result for continued calculations
+                currentExpression = result.toString();
+                expressionElement.textContent = '';
+            } catch (error) {
+                resultElement.textContent = 'Error';
+                resultElement.classList.add('animate__animated', 'animate__shakeX');
+                setTimeout(() => {
+                    resultElement.classList.remove('animate__animated', 'animate__shakeX');
+                }, 500);
+                console.error('Calculation error:', error);
+            }
+        }
+        
+        // Function to evaluate the mathematical expression
+        function evaluateExpression(expr) {
+            // Replace mathematical constants
+            expr = expr.replace(/π/g, 'Math.PI')
+                      .replace(/e/g, 'Math.E');
+            
+            // Handle factorial
+            while (expr.includes('!')) {
+                const factRegex = /(\d+)!/g;
+                expr = expr.replace(factRegex, (match, number) => {
+                    return factorial(parseInt(number));
+                });
+            }
+            
+            // Handle power operator
+            expr = expr.replace(/\^/g, '**');
+            
+            // Handle trigonometric and other functions
+            expr = expr.replace(/sin\(/g, 'Math.sin(')
+                      .replace(/cos\(/g, 'Math.cos(')
+                      .replace(/tan\(/g, 'Math.tan(')
+                      .replace(/log10\(/g, 'Math.log10(')
+                      .replace(/log\(/g, 'Math.log(')
+                      .replace(/sqrt\(/g, 'Math.sqrt(')
+                      .replace(/abs\(/g, 'Math.abs(');
+            
+            // Evaluate the expression
+            return Function('"use strict"; return (' + expr + ')')();
+        }
+        
+        // Function to calculate factorial
+        function factorial(n) {
+            if (n === 0 || n === 1) return 1;
+            let result = 1;
+            for (let i = 2; i <= n; i++) {
+                result *= i;
+            }
+            return result;
+        }
+        
+        // Function to format the result (handle large numbers and decimals)
+        function formatResult(result) {
+            // Convert to number to handle potential string results
+            const num = Number(result);
+            
+            // Check if it's a very large or small number
+            if (Math.abs(num) >= 1e10 || (Math.abs(num) < 1e-10 && num !== 0)) {
+                return num.toExponential(6);
+            }
+            
+            // For regular numbers, limit decimal places if needed
+            const resultStr = num.toString();
+            if (resultStr.includes('.') && resultStr.split('.')[1].length > 10) {
+                return num.toFixed(10).replace(/\.?0+$/, ''); // Remove trailing zeros
+            }
+            
+            return resultStr;
+        }
+        
+        // Function to add calculation to history with animation
+        function addToHistory(expression, result) {
+            // Format the expression for display
+            const displayExpression = expression
+                .replace(/\*/g, '×')
+                .replace(/\//g, '÷')
+                .replace(/Math.PI/g, 'π')
+                .replace(/Math.E/g, 'e')
+                .replace(/Math.sin\(/g, 'sin(')
+                .replace(/Math.cos\(/g, 'cos(')
+                .replace(/Math.tan\(/g, 'tan(')
+                .replace(/Math.log10\(/g, 'log(')
+                .replace(/Math.log\(/g, 'ln(')
+                .replace(/Math.sqrt\(/g, '√(')
+                .replace(/Math.abs\(/g, '|')
+                .replace(/\)/g, '|')
+                .replace(/\*\*/g, '^');
+            
+            // Add to history array (limit to last 10 entries)
+            calculationHistory.unshift({ expression: displayExpression, result });
+            if (calculationHistory.length > 10) {
+                calculationHistory.pop();
+            }
+            
+            // Update history display with animation
+            updateHistoryDisplay();
+        }
+        
+        // Function to update the history display with animation
+        function updateHistoryDisplay() {
+            historyElement.innerHTML = '';
+            
+            calculationHistory.forEach((item, index) => {
+                const historyItem = document.createElement('div');
+                historyItem.className = 'history-item history-animation';
+                historyItem.style.animationDelay = `${index * 0.05}s`;
+                historyItem.innerHTML = `${item.expression} = <span class="font-medium">${item.result}</span>`;
+                historyItem.addEventListener('click', () => {
+                    currentExpression = item.result;
+                    updateDisplay();
+                    
+                    // Add click animation
+                    historyItem.classList.add('animate__animated', 'animate__pulse');
+                    setTimeout(() => {
+                        historyItem.classList.remove('animate__animated', 'animate__pulse');
+                    }, 500);
+                });
+                historyElement.appendChild(historyItem);
+            });
+        }
+        
+        // Button press animation
+        const buttons = document.querySelectorAll('.calc-btn');
+        buttons.forEach(button => {
+            button.addEventListener('mousedown', () => {
+                button.classList.add('scale-95');
+                setTimeout(() => {
+                    button.classList.remove('scale-95');
+                }, 100);
+            });
+        });
+        
+        // Keyboard support with visual feedback
+        document.addEventListener('keydown', (event) => {
+            const key = event.key;
+            let buttonPressed = null;
+            
+            // Prevent default action for calculator keys to avoid page scrolling
+            if (['+', '-', '*', '/', '=', 'Enter', 'Backspace', 'Delete', 'Escape'].includes(key)) {
+                event.preventDefault();
+            }
+            
+            // Handle number and operator keys
+            if (/[\d\.\+\-\*\/\(\)\%]/.test(key)) {
+                appendToExpression(key);
+                
+                // Find and highlight the corresponding button
+                buttonPressed = Array.from(buttons).find(btn => 
+                    btn.textContent === key || 
+                    (key === '*' && btn.textContent === '×') ||
+                    (key === '/' && btn.textContent === '÷') ||
+                    (key === '+' && btn.textContent === '+') ||
+                    (key === '-' && btn.textContent === '−') ||
+                    (key === '.' && btn.textContent === '.') ||
+                    (key === '(' && btn.textContent === '(') ||
+                    (key === ')' && btn.textContent === ')') ||
+                    (key === '%' && btn.textContent === '%')
+                );
+            } 
+            // Handle equals and enter
+            else if (key === '=' || key === 'Enter') {
+                calculate();
+                buttonPressed = Array.from(buttons).find(btn => btn.textContent === '=');
+            } 
+            // Handle backspace
+            else if (key === 'Backspace') {
+                backspace();
+                buttonPressed = Array.from(buttons).find(btn => btn.textContent === '⌫');
+            } 
+            // Handle clear (Escape or Delete)
+            else if (key === 'Escape' || key === 'Delete') {
+                clearAll();
+                buttonPressed = Array.from(buttons).find(btn => btn.textContent === 'AC');
+            }
+            
+            // Add visual feedback for the pressed button
+            if (buttonPressed) {
+                buttonPressed.classList.add('scale-95', 'ring-2', 'ring-opacity-50', 'ring-blue-500');
+                setTimeout(() => {
+                    buttonPressed.classList.remove('scale-95', 'ring-2', 'ring-opacity-50', 'ring-blue-500');
+                }, 100);
+            }
+        });
+        
+        // Add some initial particles for visual effect
+        window.addEventListener('load', () => {
+            document.querySelector('.calculator').classList.add('animate__animated', 'animate__fadeIn');
+        });
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9613694db295f473',t:'MTc1Mjg1NjcyNy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
