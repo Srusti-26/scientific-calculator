@@ -55,6 +55,6 @@ Nitte Meenakshi Institute of Technology
 
 ## License
 
-This project is licensed under the MIT License. See the `LICENSE` file for details.
+This project is licensed under the Proprietary License. See the `LICENSE` file for details.
 
 ---
