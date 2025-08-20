@@ -48,9 +48,7 @@ To run the calculator locally:
 
 ## Author
 
-**Srusti**  
-Department of Artificial Intelligence & Data Science  
-Nitte Meenakshi Institute of Technology  
+**Srusti**   
 © 2022 SRUSTI. All Rights Reserved.
 
 ## License
